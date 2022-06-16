@@ -1,3 +1,6 @@
+import serial
+import time
+from datetime import datetime
 import numpy as np
 import motors
 
@@ -18,15 +21,35 @@ currentRightMotor = 0
 def distance(p1, p2):
     return np.sqrt((p1[0]-p2[0])^2 + (p1[1]-p2[1])^2)
 
+# currently is x:(-75,75) y(-85,25)
+def inBoundry(pos):
+    return (pos[0] < 75 && pos[0] > -75 && pos[1] > -85 && pos[1] < 25)
+
+def command(ser, command):
+  start_time = datetime.now()
+  ser.write(str.encode(command)) 
+#   time.sleep(1)
+  print(command)
+  while True:
+    break
+    line = ser.readline()
+    print(line)
+
+    if line == 'b\'ok 0\\r\\n\'':
+      break
+
 #figures out the coordinates of each anchor point
 def recalcPos():
-    xyOffset = dist / np.sqrt(2)
-    global botLeft
-    botLeft = (currentPos[0] - xyOffset, currentPos[1] - xyOffset)
-    global botRight 
-    botRight = (currentPos[0] + xyOffset, currentPos[1] - xyOffset)
-    global top
-    top = (currentPos[0], currentPos[1] + dist)
+    if inBoundry(currentPos):
+        xyOffset = dist / np.sqrt(2)
+        global botLeft
+        botLeft = (currentPos[0] - xyOffset, currentPos[1] - xyOffset)
+        global botRight 
+        botRight = (currentPos[0] + xyOffset, currentPos[1] - xyOffset)
+        global top
+        top = (currentPos[0], currentPos[1] + dist)
+    else:
+        print("point out of bounds")
 
 def movePos(v):
     currentPos = np.add(currentPos, v)
@@ -42,15 +65,24 @@ def moveMotors():
     currentLeftMotor = lenY
     global currentRightMotor
     currentRightMotor = lenZ
-    motors.move(lenX, lenY, lenZ)
+    command(ser, "G0 X" + lenX + " Y" + lenY " Z" + lenZ + "\r\n")
 
+def initSerial():
+    global ser
+    ser = serial.Serial('/dev/ttyUSB0', 115200)
+    time.sleep(4)
+    command(ser, "G21\r\n")
+    command(ser, "G90\r\n")
+    command(ser, "M92 X60 Y60 Z60\r\n")
+    command(ser, "M203 X30000 Y30000 Z30000\r\n")
+    command(ser, "M204 X17200 Y17200 Z17200\r\n")
 
 recalcPos()
 lenBotLeft = distance(leftMotorPos, botLeft)
 lenBotRight = distance(rightMotorPos, botRight)
 lenTop = distance(topMotorPos, top)
 while 1:
-    movePos(vector)
+    movePos((int(input('x coord:')),0))
     moveMotors()
 
 
