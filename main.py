@@ -20,6 +20,8 @@ def findMove(keypoints):
             minDist = distance
             minIndex = i
         i = i+1
+    if minIndex >= len(keypoints):
+        return
     target = keypoints[minIndex]
     return (target.pt[0] - centerX, -1 * (target.pt[1] - centerY))
 
@@ -33,22 +35,26 @@ while(1):
         
 
 
-        lower = (80,150,150)  #130,150,80
-        upper = (110,255,255) #250,250,120
+        lower = (70,30,120)  #130,150,80
+        upper = (120,255,255) #250,250,120
         mask = cv2.inRange(frame, lower, upper)
 
         params = cv2.SimpleBlobDetector_Params()
         params.filterByColor = True
         params.blobColor = 255
+        params.filterByCircularity = True
+        params.minCircularity = 0.7
+        # params.filterByArea = True
+
         detector = cv2.SimpleBlobDetector_create(params)
-        keypoints = detector.detect(frame)
+        keypoints = detector.detect(mask)
         move = findMove(keypoints)
         print('vector: ', move)
-        canvas = cv2.drawKeypoints(canvas, keypoints,np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        canvas = cv2.drawKeypoints(canvas, keypoints,np.array([]), (0,0,0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
         # cv2.imshow('frame',frame)
         cv2.imshow('canvas',canvas)
-        # cv2.imshow('mask',mask)
+        cv2.imshow('mask',mask)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
