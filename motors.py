@@ -6,21 +6,26 @@ def command(ser, command):
   start_time = datetime.now()
   ser.write(str.encode(command)) 
 #   time.sleep(1)
-
+  print(command)
   while True:
+    break
     line = ser.readline()
     print(line)
 
-    if line == b'ok\n':
+    if line == 'b\'ok 0\\r\\n\'':
       break
 
-ser = serial.Serial('/dev/tty.usbserial-AG0KEQWV', 115200)
-time.sleep(2)
-command(ser, "G28\r\n")
+ser = serial.Serial('/dev/ttyUSB0', 115200)
+time.sleep(4)
+command(ser, "G21\r\n")
+command(ser, "G90\r\n")
+command(ser, "M92 X60 Y60 Z60\r\n")
+command(ser, "M203 X30000 Y30000 Z30000\r\n")
+command(ser, "M204 X17200 Y17200 Z17200\r\n")
+command(ser, "G0 X-173 Y-173 Z-173\r\n")
+time.sleep(5)
 
-
-
-command(ser, "G28 X0 Y0 Z0\r\n")
+# command(ser, "G92 X0 Y0 Z0\r\n")
 # command(ser, "G28 X0 Y0\r\n")
 # command(ser, "G28 X0\r\n")
 # command(ser, "G28 Y0\r\n")
@@ -43,17 +48,14 @@ command(ser, "G28 X0 Y0 Z0\r\n")
 
 # Set Units(does not seem to work on ender 5)
 # command(ser, "G20\r\n") # inches
-command(ser, "G21\r\n") # millimeters
+# command(ser, "G21\r\n") # millimeters
 
 # Absolute Mode
-command(ser, "G90\r\n")
-
-# Relative Mode
-# command(ser, "G91 X10\r\n")
+# command(ser, "G90\r\n")
 
 # Move
 # command(ser, "G0 X7 Y18\r\n") # rapid motion but does not extrude material
-command(ser, "G0 X10 Y10 Z10\r\n") # rapid motion but does not extrude material ender 5 plus is 350 x 350
+# command(ser, "G0 X10 Y10 Z10\r\n") # rapid motion but does not extrude material ender 5 plus is 350 x 350
 
 time.sleep(2)
 ser.close()
