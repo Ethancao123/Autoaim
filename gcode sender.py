@@ -16,14 +16,19 @@ def command(ser, command):
       break
 
 ser = serial.Serial('/dev/ttyUSB0', 115200)
-time.sleep(4)
 command(ser, "G21\r\n")
+time.sleep(1)
 command(ser, "G90\r\n")
-command(ser, "M92 X60 Y60 Z60\r\n")
-command(ser, "M203 X30000 Y30000 Z30000\r\n")
-command(ser, "M204 X17200 Y17200 Z17200\r\n")
-command(ser, "G0 X-173 Y-173 Z-173\r\n")
-time.sleep(5)
+time.sleep(1)
+command(ser, "M82\r\n")
+time.sleep(1)
+command(ser, "M92 Y17 Z37\r\n")
+time.sleep(1)
+command(ser, "M203 Y600 Z600\r\n")
+time.sleep(1)
+command(ser, "G28 Z0\r\n")
+while 1:
+  command(ser, input() + '\r\n')
 
 # command(ser, "G92 X0 Y0 Z0\r\n")
 # command(ser, "G28 X0 Y0\r\n")

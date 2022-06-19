@@ -7,25 +7,18 @@ import time
 from datetime import datetime
 
 #all in mm
-#might be adjusted after rollers are added
-topMotorPos = (0, 160) # top motor (X)
-leftMotorPos = (-368.3, -165) # left motor (Y)
-rightMotorPos = (368.3, -165) # right motor (Z)
-dist = 70.5 # attachment point distance
-pulleyCir = 55 * np.pi
+ySpeed = 1
+zSpeed = 5
+kP =0.25
 
 currentPos = (0,0)
-
-currentTopMotor = 0
-currentLeftMotor = 0
-currentRightMotor = 0
 
 def distance(p1, p2):
     return np.sqrt((p1[0]-p2[0]) * (p1[0]-p2[0]) + (p1[1]-p2[1]) * (p1[1]-p2[1]))
 
 # currently is x:(-50,50) y(-25,10)
 def inBoundry(pos):
-    return (pos[0] < 20 and pos[0] > -20 and pos[1] > -10 and pos[1] < 7)
+    return pos[1] > 10 and pos[1] < 160
 
 def command(ser, command):
   start_time = datetime.now()
@@ -43,13 +36,6 @@ def command(ser, command):
 #figures out the coordinates of each anchor point
 def recalcPos():
     if inBoundry(currentPos):
-        xyOffset = dist / np.sqrt(2)
-        global botLeft
-        botLeft = (currentPos[0] - xyOffset, currentPos[1] - xyOffset)
-        global botRight 
-        botRight = (currentPos[0] + xyOffset, currentPos[1] - xyOffset)
-        global top
-        top = (currentPos[0], currentPos[1] + dist)
         return True
     else:
         print("point out of bounds")
@@ -61,29 +47,28 @@ def movePos(v):
     print(currentPos)
     if not recalcPos():
         currentPos = np.subtract(currentPos, v)
-
-def moveMotors():
-    lenX = distance(topMotorPos, top)
-    lenY = distance(leftMotorPos, botLeft)
-    lenZ = distance(rightMotorPos, botRight)
-    global currentTopMotor 
-    currentTopMotor = lenX - initTop
-    global currentLeftMotor 
-    currentLeftMotor = lenY - initLeft
-    global currentRightMotor
-    currentRightMotor = lenZ - initRight
-    command(ser, "G0 X" + str(-currentTopMotor/10) + " Y" + str(-currentLeftMotor/10) + " Z" + str(-currentRightMotor/10) + "\r\n")
+        return
+    command(ser, "G0 Y" + str(-currentPos[0]/ySpeed) + " Z" + str(currentPos[1]/zSpeed) + "\r\n")
 
 def initSerial():
     global ser
     ser = serial.Serial('/dev/ttyUSB0', 115200)
-    time.sleep(4)
-    command(ser, "M17\r\n")
     command(ser, "G21\r\n")
+    time.sleep(1)
     command(ser, "G90\r\n")
-    command(ser, "M92 X200 Y200 Z200\r\n")
-    command(ser, "M203 X30000 Y30000 Z30000\r\n")
-    command(ser, "M204 X17200 Y17200 Z17200\r\n")
+    time.sleep(1)
+    command(ser, "M82\r\n")
+    time.sleep(1)
+    command(ser, "M92 Y17 Z37\r\n")
+    time.sleep(3)
+    command(ser, "M203 Y" + str(1.7*ySpeed) + " Z" + str(37*zSpeed) + "\r\n")
+    time.sleep(1)
+    command(ser, "G92 E0\r\n")
+    time.sleep(1)
+    command(ser, "G28 Z0\r\n")
+    input()
+    movePos((0,70))
+    time.sleep(5)
 
 # Read image
 cam = cv2.VideoCapture(0)
@@ -105,17 +90,12 @@ def findMove(keypoints):
         i = i+1
     if minIndex >= len(keypoints):
         return
+    global target
     target = keypoints[minIndex]
     return (target.pt[0] - centerX, -1 * (target.pt[1] - centerY))
 
 initSerial()
 recalcPos()
-initRight = distance(rightMotorPos, botRight)
-initLeft = distance(leftMotorPos, botLeft)
-initTop = distance(topMotorPos, top)
-movePos((0,0))
-moveMotors()
-input()
 while(1):
         ret, frame = cam.read()
         canvas = frame.copy()
@@ -142,14 +122,14 @@ while(1):
         move = findMove(keypoints)
         print('vector: ', move)
         if move != None:
-            movePos((move[0]/100, move[1]/100))
-            moveMotors()
+            movePos((move[0]*kP, move[1]*kP))
+            input()
         canvas = cv2.drawKeypoints(canvas, keypoints,np.array([]), (0,0,0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
         # cv2.imshow('frame',frame)
         cv2.imshow('canvas',canvas)
         cv2.imshow('mask',mask)
-
+        input()
         if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 cam.release()
