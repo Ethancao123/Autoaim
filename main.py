@@ -48,7 +48,7 @@ def movePos(v):
     if not recalcPos():
         currentPos = np.subtract(currentPos, v)
         return
-    command(ser, "G0 Y" + str(-currentPos[0]/ySpeed) + " Z" + str(currentPos[1]/zSpeed) + "\r\n")
+    command(ser, "G0 Y" + str(-currentPos[0]) + " Z" + str(currentPos[1]) + "\r\n")
 
 def initSerial():
     global ser
@@ -57,14 +57,12 @@ def initSerial():
     time.sleep(1)
     command(ser, "G90\r\n")
     time.sleep(1)
-    command(ser, "M82\r\n")
+    command(ser, "M203 X150 Y150 Z150\r\n")
     time.sleep(1)
     command(ser, "M92 Y17 Z37\r\n")
-    time.sleep(3)
-    command(ser, "M203 Y" + str(1.7*ySpeed) + " Z" + str(37*zSpeed) + "\r\n")
-    time.sleep(1)
-    command(ser, "G92 E0\r\n")
-    time.sleep(1)
+    time.sleep(2)
+    command(ser, "M203 Y" + str(1.7) + " Z" + str(37) + "\r\n")
+    time.sleep(2)
     command(ser, "G28 Z0\r\n")
     input()
     movePos((0,70))
