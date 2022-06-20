@@ -21,6 +21,7 @@ currentPos = (0,0)
 FOV *= np.pi / 180.0  # convert from deg to rad
 CM_360 /= 2 * np.pi  # convert from cm/360 deg to cm/rad
 
+# TODO: make sure coordinate systems are matched between opencv (test by shifting keypoints) and motor system
 
 def distance(p1, p2):
     return np.sqrt((p1[0]-p2[0]) * (p1[0]-p2[0]) + (p1[1]-p2[1]) * (p1[1]-p2[1]))
@@ -126,8 +127,13 @@ def findKeypoints(frame):
 
     detector = cv2.SimpleBlobDetector_create(params)
 
-    # reeturn keypoints
-    return detector.detect(frame)
+    keypoints = detector.detect(frame)
+
+    # shift keypoint down by TOP_BAR_HEIGHT px
+    for k in keypoints:
+        k.pt = (k.pt[0], k.pt[1] + TOP_BAR_HEIGHT)
+
+    return keypoints
 
 # converts a keypoint to the mouse translation in mm required to reach that keypoint
 def getMouseTranslation(keypoint, frame):
