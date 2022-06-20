@@ -18,9 +18,8 @@ TOP_BAR_HEIGHT = 50 # pixels from the top to remove from the frame (crops out th
 
 currentPos = (0,0)
 
-# convert fov and cm/360 deg to radians
-FOV *= np.pi / 180.0
-CM_360 *= np.pi / 180.0
+FOV *= np.pi / 180.0  # convert from deg to rad
+CM_360 /= 2 * np.pi  # convert from cm/360 deg to cm/rad
 
 
 def distance(p1, p2):
