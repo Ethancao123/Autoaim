@@ -18,10 +18,10 @@ TOP_BAR_HEIGHT = 50 # pixels from the top to remove from the frame (crops out th
 
 currentPos = (0,0)
 
-# convert fov and cm/360 deg to radians
-FOV *= np.pi / 180.0
-CM_360 *= np.pi / 180.0
+FOV *= np.pi / 180.0  # convert from deg to rad
+CM_360 /= 2 * np.pi  # convert from cm/360 deg to cm/rad
 
+# TODO: make sure coordinate systems are matched between opencv (test by shifting keypoints) and motor system
 
 def distance(p1, p2):
     return np.sqrt((p1[0]-p2[0]) * (p1[0]-p2[0]) + (p1[1]-p2[1]) * (p1[1]-p2[1]))
@@ -33,15 +33,7 @@ def inBoundary(pos):
 def command(ser, command):
     start_time = datetime.now()
     ser.write(str.encode(command)) 
-    #   time.sleep(1)
     print(command)
-    while True:
-        break
-        line = ser.readline()
-        print(line)
-
-        if line == 'b\'ok 0\\r\\n\'':
-            break
 
 def translateMotors(v):
     global currentPos
@@ -65,18 +57,17 @@ def initSerial():
     time.sleep(1)
     command(ser, "G90\r\n")
     time.sleep(1)
-    command(ser, "M203 X150 Y150 Z150\r\n")
+    command(ser, "M203 X150 Y150 Z300\r\n")
     time.sleep(1)
     command(ser, "M92 Y17 Z37\r\n")
-    time.sleep(2)
-    command(ser, "M203 Y" + str(1.7) + " Z" + str(37) + "\r\n")
-    time.sleep(2)
+    time.sleep(1)
     command(ser, "G28 Z0\r\n")
 
-    input()
+    input() #modify to wait for response in the future
 
-    translateMotors((0,70))
-    time.sleep(5)
+    translateMotors((0,100))
+
+    input()
 
 # return the next keypoint coordinates
 def getNextKeypoint(keypoints, frame):
@@ -124,8 +115,13 @@ def findKeypoints(frame):
 
     detector = cv2.SimpleBlobDetector_create(params)
 
-    # reeturn keypoints
-    return detector.detect(frame)
+    keypoints = detector.detect(frame)
+
+    # shift keypoint down by TOP_BAR_HEIGHT px
+    for k in keypoints:
+        k.pt = (k.pt[0], k.pt[1] + TOP_BAR_HEIGHT)
+
+    return keypoints
 
 # converts a keypoint to the mouse translation in mm required to reach that keypoint
 def getMouseTranslation(keypoint, frame):
