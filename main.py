@@ -50,12 +50,11 @@ def translateMotors(v):
     print(currentPos)
 
     if inBoundary(currentPos):
-        command(ser, "G0 Y" + str(currentPos[0]) + " Z" + str(currentPos[1]) + "\r\n")
+        command(ser, "G0 Y" + str(-currentPos[0]) + " Z" + str(currentPos[1]) + "\r\n")
     else:
         print("point out of bounds")
         currentPos = np.subtract(currentPos, v)
         return
-    command(ser, "G0 Y" + str(-currentPos[0]) + " Z" + str(currentPos[1]) + "\r\n")
 
 def initSerial():
     global ser
@@ -69,17 +68,9 @@ def initSerial():
     command(ser, "M203 X150 Y150 Z150\r\n")
     time.sleep(1)
     command(ser, "M92 Y17 Z37\r\n")
-<<<<<<< HEAD
     time.sleep(2)
     command(ser, "M203 Y" + str(1.7) + " Z" + str(37) + "\r\n")
     time.sleep(2)
-=======
-    time.sleep(3)
-    command(ser, "M203 Y" + str(1.7*Y_SPEED) + " Z" + str(37*Z_SPEED) + "\r\n")
-    time.sleep(1)
-    command(ser, "G92 E0\r\n")
-    time.sleep(1)
->>>>>>> 74fd1851631ebef45e0478cc369e4537793addb6
     command(ser, "G28 Z0\r\n")
 
     input()
