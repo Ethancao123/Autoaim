@@ -33,15 +33,7 @@ def inBoundary(pos):
 def command(ser, command):
     start_time = datetime.now()
     ser.write(str.encode(command)) 
-    #   time.sleep(1)
     print(command)
-    while True:
-        break
-        line = ser.readline()
-        print(line)
-
-        if line == 'b\'ok 0\\r\\n\'':
-            break
 
 def translateMotors(v):
     global currentPos
@@ -50,12 +42,11 @@ def translateMotors(v):
     print(currentPos)
 
     if inBoundary(currentPos):
-        command(ser, "G0 Y" + str(currentPos[0]) + " Z" + str(currentPos[1]) + "\r\n")
+        command(ser, "G0 Y" + str(-currentPos[0]) + " Z" + str(currentPos[1]) + "\r\n")
     else:
         print("point out of bounds")
         currentPos = np.subtract(currentPos, v)
         return
-    command(ser, "G0 Y" + str(-currentPos[0]) + " Z" + str(currentPos[1]) + "\r\n")
 
 def initSerial():
     global ser
@@ -66,20 +57,17 @@ def initSerial():
     time.sleep(1)
     command(ser, "G90\r\n")
     time.sleep(1)
-    command(ser, "M203 X150 Y150 Z150\r\n")
+    command(ser, "M203 X150 Y150 Z300\r\n")
     time.sleep(1)
     command(ser, "M92 Y17 Z37\r\n")
-    time.sleep(3)
-    command(ser, "M203 Y" + str(1.7*Y_SPEED) + " Z" + str(37*Z_SPEED) + "\r\n")
-    time.sleep(1)
-    command(ser, "G92 E0\r\n")
     time.sleep(1)
     command(ser, "G28 Z0\r\n")
 
-    input()
+    input() #modify to wait for response in the future
 
-    translateMotors((0,70))
-    time.sleep(5)
+    translateMotors((0,100))
+
+    input()
 
 # return the next keypoint coordinates
 def getNextKeypoint(keypoints, frame):
