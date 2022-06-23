@@ -108,7 +108,7 @@ def findKeypoints(frame, detector):
     keypoints = detector.detect(frame)
 
     for k in keypoints:
-        k.pt = (k.pt[0] + int(SIDE_CROPPING / DOWNSAMPLER), k.pt[1] + int(TOP_BAR_HEIGHT / DOWNSAMPLER))
+        k.pt = ((k.pt[0] * DOWNSAMPLER + SIDE_CROPPING), (k.pt[1] * DOWNSAMPLER + TOP_BAR_HEIGHT))
 
     return keypoints
 
