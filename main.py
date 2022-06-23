@@ -1,4 +1,5 @@
 # Standard imports
+from venv import create
 import cv2
 import numpy as np
 
@@ -13,7 +14,12 @@ Z_SPEED = 5
 FOV = 103 # field of view (degrees)
 CM_360 = 65 # cm/360 degrees
 
-TOP_BAR_HEIGHT = 50 # pixels from the top to remove from the frame (crops out the top bar)
+TOP_BAR_HEIGHT = 80 # pixels from the top to remove from the frame (crops out the top bar)
+SIDE_CROPPING = 200
+DOWNSAMPLER = 4
+
+LOWER_BLUE = np.array([0,90,90])
+UPPER_BLUE = np.array([110,255,255])
 
 
 currentPos = (0,0)
@@ -90,36 +96,19 @@ def getNextKeypoint(keypoints, frame):
     return keypoints[minIndex].pt
 
 
-def findKeypoints(frame):
-    # crop frame by removing top 80 pixels
-    frame = frame[TOP_BAR_HEIGHT:, :, :]
 
-    # Convert BGR to HSV
+def findKeypoints(frame, detector):
+    frame = frame[int(TOP_BAR_HEIGHT / DOWNSAMPLER):, int(SIDE_CROPPING / DOWNSAMPLER):int((frame.shape[1] - SIDE_CROPPING) / DOWNSAMPLER), :]
+
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-    # threshold using color range
-    lower_blue = np.array([0,90,90])
-    upper_blue = np.array([110,255,255])
-
-    frame = cv2.inRange(frame, lower_blue, upper_blue)
-
-    # detect circular blobs from the thresholded frame
-    params = cv2.SimpleBlobDetector_Params()
-    params.filterByColor = True
-    params.blobColor = 255
-    params.filterByArea = True
-    params.minArea = 1250
-    params.maxArea = 4000
-    params.filterByConvexity = True
-    params.minConvexity = 0.8
-
-    detector = cv2.SimpleBlobDetector_create(params)
+    # define range of blue color in HSV
+    # Threshold the HSV image to get only blue colors
+    frame = cv2.inRange(frame, LOWER_BLUE, UPPER_BLUE)
 
     keypoints = detector.detect(frame)
 
-    # shift keypoint down by TOP_BAR_HEIGHT px
     for k in keypoints:
-        k.pt = (k.pt[0], k.pt[1] + TOP_BAR_HEIGHT)
+        k.pt = (k.pt[0] + int(SIDE_CROPPING / DOWNSAMPLER), k.pt[1] + int(TOP_BAR_HEIGHT / DOWNSAMPLER))
 
     return keypoints
 
@@ -141,12 +130,33 @@ def getMouseTranslation(keypoint, frame):
 
     return (x_translation, y_translation)
 
+def getFrameWidth(cam):
+    init_frame = None
+
+    while type(init_frame) != type(np.array([])):
+        init_frame = cam.read()[1]
+
+    return init_frame.shape[1]
+
+def createDetector(frame_width):
+    params = cv2.SimpleBlobDetector_Params()
+    params.filterByColor = True
+    params.blobColor = 255
+    params.filterByArea = True
+    params.minArea = ((0.015 * frame_width / DOWNSAMPLER) ** 2) * np.pi
+    params.maxArea =((0.028 * frame_width / DOWNSAMPLER) ** 2) * np.pi
+    params.filterByConvexity = True
+    params.minConvexity = 0.8
+
+    return cv2.SimpleBlobDetector_create(params)
 
 # Read image
 cam = cv2.VideoCapture(0)
 initSerial()
 if not inBoundary(currentPos):
         print("point out of bounds")
+
+detector = createDetector(getFrameWidth(cam))
 
 while True:
         ret, frame = cam.read()
@@ -155,7 +165,7 @@ while True:
         if not ret:
             break
 
-        keypoints = findKeypoints(frame)
+        keypoints = findKeypoints(frame, detector)
 
         if len(keypoints) > 0:
             nextKeypoint = getNextKeypoint(keypoints)
