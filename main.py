@@ -42,7 +42,7 @@ def translateMotors(v):
     print(currentPos)
 
     if inBoundary(currentPos):
-        command(ser, "G0 Y" + str(-currentPos[0]) + " Z" + str(currentPos[1]) + "\r\n")
+        command(ser, "G1 Y" + str(-currentPos[0]) + " Z" + str(currentPos[1]) + "\r\n")
     else:
         print("point out of bounds")
         currentPos = np.subtract(currentPos, v)
@@ -52,12 +52,13 @@ def initSerial():
     global ser
 
     ser = serial.Serial('/dev/ttyUSB0', 115200)
-
+    time.sleep(3)
     command(ser, "G21\r\n")
     time.sleep(1)
     command(ser, "G90\r\n")
     time.sleep(1)
-    command(ser, "M203 X150 Y150 Z300\r\n")
+    # command(ser, "M203 X150 Y150 Z1000\r\n")
+    command(ser, "G1 F300\r\n")
     time.sleep(1)
     command(ser, "M92 Y17 Z37\r\n")
     time.sleep(1)
@@ -162,12 +163,10 @@ while True:
             print(nextKeypoint)
 
             translateMotors(getMouseTranslation(nextKeypoint))
-            input()
             
         canvas = cv2.drawKeypoints(canvas, keypoints,np.array([]), (0,0,0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
         cv2.imshow('canvas', canvas)
 
-        input()
         if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 cam.release()
